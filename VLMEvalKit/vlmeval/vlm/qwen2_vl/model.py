@@ -130,6 +130,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             )
             self.model.cuda().eval()
 
+        self.model.KV_cache_compression(args.image_budget, args.language_budget, args.evict_method)
         torch.cuda.empty_cache()
 
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:

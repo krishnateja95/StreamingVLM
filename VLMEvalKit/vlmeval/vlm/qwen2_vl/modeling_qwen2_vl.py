@@ -489,6 +489,12 @@ class Qwen2VLAttention(nn.Module):
 
         self.rotary_emb = Qwen2VLRotaryEmbedding(config=config)
 
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.image_budget = image_budget
+        self.language_budget = language_budget
+        self.evict_method = evict_method 
+
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -781,6 +787,10 @@ class Qwen2VLDecoderLayer(nn.Module):
         self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.self_attn.KV_cache_compression(image_budget, language_budget, evict_method)
+
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -955,6 +965,10 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
         self.post_init()
+
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        for layer in self.layers:
+            layer.KV_cache_compression(image_budget, language_budget, evict_method)
 
     def get_input_embeddings(self):
         return self.embed_tokens
@@ -1225,6 +1239,11 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
 
         # Initialize weights and apply final processing
         self.post_init()
+
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.model.KV_cache_compression(image_budget, language_budget, evict_method)
+
+
 
     def get_input_embeddings(self):
         return self.model.embed_tokens

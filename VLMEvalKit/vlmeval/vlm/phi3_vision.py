@@ -114,6 +114,9 @@ class Phi3_5Vision(BaseModel):
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto',
             _attn_implementation='eager', 
             cache_dir=args.cache_dir).eval()
+        
+
+        model.KV_cache_compression(args.image_budget, args.language_budget, args.evict_method)
 
         # for best performance, use num_crops=4 for multi-frame, num_crops=16 for single-frame.
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, num_crops=4, cache_dir=args.cache_dir)

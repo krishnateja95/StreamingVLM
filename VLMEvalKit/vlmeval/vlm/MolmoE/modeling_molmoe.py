@@ -579,6 +579,11 @@ class MolmoAttention(nn.Module):
             except ModuleNotFoundError:
                 pass
 
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.image_budget = image_budget
+        self.language_budget = language_budget
+        self.evict_method = evict_method
+        
     def attention(self,
         q: torch.Tensor,
         k: torch.Tensor,
@@ -891,6 +896,10 @@ class MolmoDecoderLayer(nn.Module):
             config.residual_dropout, 
             mask_p=config.response_residual_dropout
         ) 
+
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.attn.KV_cache_compression(image_budget, language_budget, evict_method)
+
 
     def forward(
         self,
@@ -1794,6 +1803,9 @@ class MolmoModel(MolmoPretrainedModel):
         if self.vision_backbone is not None:
             self.vision_backbone.reset_with_pretrained_weights()
 
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        for layer in self.transformer.blocks:
+            layer.KV_cache_compression(image_budget, language_budget, evict_method)
 
     @property
     def device(self) -> torch.device:
@@ -2195,6 +2207,9 @@ class MolmoForCausalLM(PreTrainedModel):
                 bias=config.include_bias,
                 device=config.init_device,
             )
+
+    def KV_cache_compression(self, image_budget, language_budget, evict_method):
+        self.model.KV_cache_compression(image_budget, language_budget, evict_method)
 
     def forward(
         self,

@@ -54,6 +54,9 @@ class molmo(BaseModel):
                 torch_dtype=torch.bfloat16,
                 device_map='auto',
                 cache_dir=args.cache_dir)
+            
+        
+        self.model.KV_cache_compression(args.image_budget, args.language_budget, args.evict_method)
 
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.bfloat16)
         self.kwargs = kwargs
